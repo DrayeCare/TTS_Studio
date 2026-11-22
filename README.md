@@ -195,43 +195,30 @@
 
 ## 🏗️ Architecture
 
-TTS Studio uses a modular desktop architecture.
+TTS Studio uses an event-driven, modular desktop architecture separating operator controls from the public stage output.
 
-```text
-┌─────────────────────────────────────┐
-│          Operator Console           │
-│                                     │
-│  Controls / Questions / Scoreboard  │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│           Game Controller           │
-│                                     │
-│     Commands / State / Events       │
-└──────────────────┬──────────────────┘
-                   │
-         ┌─────────┼──────────┐
-         ▼         ▼          ▼
-┌─────────────┐ ┌─────────┐ ┌──────────────┐
-│ Game Engine │ │  Score  │ │  Questions   │
-│             │ │ Engine  │ │   Manager    │
-└──────┬──────┘ └─────────┘ └──────────────┘
-       │
-       ▼
-┌─────────────────────────────────────┐
-│            Game State               │
-│                                     │
-│ Question / Score / Round / Display  │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│            Stage Display            │
-│                                     │
-│     Public screen / Fullscreen      │
-└─────────────────────────────────────┘
-```
+```mermaid
+flowchart TD
+    OC["🖥️ **Operator Console**<br/>Controls · Questions · Scoreboard"]
+    GC["⚙️ **Game Controller**<br/>Commands · State · Events"]
+    
+    GE["🎮 **Game Engine**"]
+    SE["🏆 **Score Engine**"]
+    QM["❓ **Questions Manager**"]
+    
+    GS["📦 **Game State**<br/>Question · Score · Round · Display"]
+    SD["📺 **Stage Display**<br/>Public Screen · Fullscreen"]
+
+    OC -->|Dispatches Commands| GC
+    GC --> GE
+    GC --> SE
+    GC --> QM
+    
+    GE -->|Mutates| GS
+    SE -.->|Updates| GS
+    QM -.->|Feeds Data| GS
+    
+    GS -->|Syncs View| SD
 
 ### 📐 Design Principles
 - **Single source of truth:** Game state is centrally managed.

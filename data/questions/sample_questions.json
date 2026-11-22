@@ -1,0 +1,15 @@
+{
+  "title": "Sample Set",
+  "questions": [
+    {
+      "id": "q001",
+      "number": 1,
+      "category": "Contoh",
+      "question": "Kenapa ayam menyeberang jalan?",
+      "answer": "Untuk sampai ke sisi seberang.",
+      "hint": "",
+      "notes": "Contoh placeholder",
+      "points": 10
+    }
+  ]
+}

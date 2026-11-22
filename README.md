@@ -195,43 +195,30 @@
 
 ## 🏗️ Architecture
 
-TTS Studio uses a modular desktop architecture.
+TTS Studio uses an event-driven, modular desktop architecture separating operator controls from the public stage output.
 
-```text
-┌─────────────────────────────────────┐
-│          Operator Console           │
-│                                     │
-│  Controls / Questions / Scoreboard  │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│           Game Controller           │
-│                                     │
-│     Commands / State / Events       │
-└──────────────────┬──────────────────┘
-                   │
-         ┌─────────┼──────────┐
-         ▼         ▼          ▼
-┌─────────────┐ ┌─────────┐ ┌──────────────┐
-│ Game Engine │ │  Score  │ │  Questions   │
-│             │ │ Engine  │ │   Manager    │
-└──────┬──────┘ └─────────┘ └──────────────┘
-       │
-       ▼
-┌─────────────────────────────────────┐
-│            Game State               │
-│                                     │
-│ Question / Score / Round / Display  │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│            Stage Display            │
-│                                     │
-│     Public screen / Fullscreen      │
-└─────────────────────────────────────┘
-```
+```mermaid
+flowchart TD
+    OC["🖥️ <b>Operator Console</b><br/>Controls · Questions · Scoreboard"]
+    GC["⚙️ <b>Game Controller</b><br/>Commands · State · Events"]
+    
+    GE["🎮 <b>Game Engine</b>"]
+    SE["🏆 <b>Score Engine</b>"]
+    QM["❓ <b>Questions Manager</b>"]
+    
+    GS["📦 <b>Game State</b><br/>Question · Score · Round · Display"]
+    SD["📺 <b>Stage Display</b><br/>Public Screen · Fullscreen"]
+
+    OC -->|Dispatches Commands| GC
+    GC --> GE
+    GC --> SE
+    GC --> QM
+    
+    GE -->|Mutates| GS
+    SE -.->|Updates| GS
+    QM -.->|Feeds Data| GS
+    
+    GS -->|Syncs View| SD
 
 ### 📐 Design Principles
 - **Single source of truth:** Game state is centrally managed.

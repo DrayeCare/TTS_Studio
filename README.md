@@ -199,15 +199,15 @@ TTS Studio uses an event-driven, modular desktop architecture separating operato
 
 ```mermaid
 flowchart TD
-    OC["🖥️ **Operator Console**<br/>Controls · Questions · Scoreboard"]
-    GC["⚙️ **Game Controller**<br/>Commands · State · Events"]
+    OC["🖥️ <b>Operator Console</b><br/>Controls · Questions · Scoreboard"]
+    GC["⚙️ <b>Game Controller</b><br/>Commands · State · Events"]
     
-    GE["🎮 **Game Engine**"]
-    SE["🏆 **Score Engine**"]
-    QM["❓ **Questions Manager**"]
+    GE["🎮 <b>Game Engine</b>"]
+    SE["🏆 <b>Score Engine</b>"]
+    QM["❓ <b>Questions Manager</b>"]
     
-    GS["📦 **Game State**<br/>Question · Score · Round · Display"]
-    SD["📺 **Stage Display**<br/>Public Screen · Fullscreen"]
+    GS["📦 <b>Game State</b><br/>Question · Score · Round · Display"]
+    SD["📺 <b>Stage Display</b><br/>Public Screen · Fullscreen"]
 
     OC -->|Dispatches Commands| GC
     GC --> GE

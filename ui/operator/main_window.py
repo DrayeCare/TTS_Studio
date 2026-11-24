@@ -3,7 +3,7 @@
 import html
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -27,6 +27,8 @@ SAMPLE_SET = Path(__file__).resolve().parents[2] / "data" / "questions" / "sampl
 
 
 class OperatorWindow(QMainWindow):
+    new_session_requested = Signal()
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
@@ -45,6 +47,10 @@ class OperatorWindow(QMainWindow):
         self.status = QLabel("Belum ada set soal dimuat.")
         self.status.setWordWrap(True)
         outer.addWidget(self.status)
+
+        self.session_status = QLabel("")
+        self.session_status.setWordWrap(True)
+        outer.addWidget(self.session_status)
 
         body = QHBoxLayout()
         left = QVBoxLayout()
@@ -72,8 +78,11 @@ class OperatorWindow(QMainWindow):
         self.load_button.clicked.connect(self._load_set)
         self.sample_button = QPushButton("Muat Contoh")
         self.sample_button.clicked.connect(self._load_sample)
+        self.new_session_button = QPushButton("Sesi Baru")
+        self.new_session_button.clicked.connect(self._new_session)
         file_row.addWidget(self.load_button)
         file_row.addWidget(self.sample_button)
+        file_row.addWidget(self.new_session_button)
         file_row.addStretch(1)
         outer.addLayout(file_row)
 
@@ -169,6 +178,25 @@ class OperatorWindow(QMainWindow):
         )
         if answer == QMessageBox.StandardButton.Yes:
             self.controller.reset()
+
+    # --- persistence feedback ----------------------------------------
+
+    def set_session_status(self, text):
+        self.session_status.setText(text)
+
+    def set_session_error(self, text):
+        self.session_status.setText(f"Gagal menyimpan: {text}")
+
+    def _new_session(self):
+        answer = QMessageBox.question(
+            self,
+            "Sesi baru",
+            "Mulai sesi baru? Sesi sebelumnya akan diarsipkan sebagai cadangan.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            self.new_session_requested.emit()
 
     # --- state rendering ----------------------------------------------
 

@@ -4,6 +4,8 @@ This module stays free of Qt widget imports so the gameplay rules can be
 tested without a GUI.
 """
 
+from dataclasses import fields
+
 from PySide6.QtCore import QObject, Signal
 
 from core.game_state import GameState
@@ -154,6 +156,12 @@ class GameController(QObject):
     def reset(self):
         """Return the whole session to its initial state."""
         self.state.reset()
+        self._emit()
+
+    def apply_state(self, state):
+        """Adopt a fully validated state in place and notify subscribers once."""
+        for item in fields(self.state):
+            setattr(self.state, item.name, getattr(state, item.name))
         self._emit()
 
     # --- team management ---------------------------------------------

@@ -17,10 +17,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
-def studio():
+def studio(tmp_path_factory):
     app = QApplication.instance() or QApplication([])
     assert app is not None
-    return TTSStudioApplication()
+    session_dir = tmp_path_factory.mktemp("studio_session")
+    return TTSStudioApplication(
+        session_path=session_dir / "session.json", autosave_ms=60000
+    )
 
 
 def test_sample_set_is_loadable_and_rendered(studio):

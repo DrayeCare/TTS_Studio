@@ -38,6 +38,7 @@
 - [🎨 UI Design Direction](#-ui-design-direction)
 - [🛡️ Safety and Reliability](#️-safety-and-reliability)
 - [🧪 Testing](#-testing)
+- [💾 Sesi & Pemulihan](#-sesi--pemulihan)
 - [🗺️ Development Roadmap](#️-development-roadmap)
 - [🧭 Development Principles](#-development-principles)
 - [📜 License & Status](#-license--status)
@@ -58,9 +59,25 @@
 - `core/score_engine.py` berisi ledger skor append-only: setiap transaksi mencatat tim, jumlah, alasan, timestamp UTC, dan skor akhir. Skor negatif diizinkan untuk penalti.
 - Undo tidak menghapus riwayat: transaksi asli ditandai batal dan ditambah entri kompensasi. Redo sengaja tidak diimplementasikan.
 - Stage: judul, nomor dan kategori soal, teks soal, jawaban, indikator status, dan scoreboard tim yang diperbarui lewat sinyal yang sama.
-- 89 tes otomatis untuk controller, pemuatan soal, aturan tim, ledger skor, undo, dan integrasi operator/stage (offscreen).
+- `services/session_service.py` menyimpan sesi JSON versi 1 dengan tulis aman (temp file + fsync + replace), cadangan last-known-good, validasi ketat, dan pemulihan dari cadangan.
+- `services/session_autosave.py` menyimpan otomatis dari thread UI dengan debounce, tidak menulis ulang state yang sama, dan flush saat aplikasi keluar.
+- Startup memulihkan sesi otomatis (tanpa dialog); tombol **Sesi Baru** mengarsipkan sesi lama sebelum reset.
+- 174 tes otomatis untuk controller, soal, tim, ledger skor, undo, sesi, pemulihan file, dan integrasi UI (offscreen).
 
-**Belum diimplementasikan:** timer, animasi, efek suara, editor soal, penyimpanan sesi, ekspor JSON, dan pintasan yang dapat dikonfigurasi.
+**Belum diimplementasikan:** timer, animasi, efek suara, editor soal, ekspor JSON, dan pintasan yang dapat dikonfigurasi.
+
+---
+
+## 💾 Sesi & Pemulihan
+
+File sesi utama: `data/session/session.json`, cadangan: `data/session/session.backup.json` (keduanya diabaikan Git). Format JSON memiliki `schema_version: 1` dan memuat seluruh state yang diperlukan: judul dan daftar soal beserta metadata, indeks/ID soal, status tampilan soal dan jawaban, status mulai/jeda, soal selesai, tim (ID, nama, skor), tim terpilih, ID berikutnya, seluruh transaksi skor (termasuk flag undo, nomor urut, dan timestamp UTC), serta nomor transaksi berikutnya. `last_action` sengaja tidak disimpan karena hanya umpan balik sementara.
+
+Kebijakan:
+- Tulis baru dibuat di file sementara pada direktori yang sama, di-flush dan di-fsync, lalu mengganti file utama. `os.replace` bersifat atomik pada sistem yang mendukungnya; tidak ada klaim atomisitas mutlak untuk semua filesystem Windows.
+- Jika file utama masih valid, salinannya menjadi cadangan **sebelum** file utama diganti. Kegagalan tulis tidak merusak sesi terakhir yang valid.
+- Jika file utama rusak, file tersebut dipindahkan ke nama `.damaged-<waktu>.json` untuk diagnostik, lalu cadangan dicoba. Jika keduanya gagal, aplikasi mulai dengan sesi kosong dan alasannya ditampilkan di panel operator.
+- Tombol **Sesi Baru** mengarsipkan sesi valid ke `session.previous-<waktu>.json` sebelum reset, sehingga sesi lama tetap dapat dipulihkan manual.
+- Autosave hanya menulis saat payload benar-benar berubah (debounce 400 ms), berjalan di thread UI tanpa worker thread, dan melakukan flush saat aplikasi keluar. Perubahan dalam jendela debounce dapat hilang jika proses mati mendadak.
 
 ---
 

@@ -14,12 +14,14 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QTabWidget,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
 from services.question_service import QuestionSetError, load_question_set
+from ui.components.team_panel import TeamPanel
 
 SAMPLE_SET = Path(__file__).resolve().parents[2] / "data" / "questions" / "sample_questions.json"
 
@@ -52,12 +54,17 @@ class OperatorWindow(QMainWindow):
         left.addWidget(self.question_list)
         body.addLayout(left, 1)
 
-        right = QVBoxLayout()
-        right.addWidget(QLabel("Detail Soal"))
+        tabs = QTabWidget()
+        question_tab = QWidget()
+        question_layout = QVBoxLayout(question_tab)
+        question_layout.addWidget(QLabel("Detail Soal"))
         self.detail = QTextBrowser()
         self.detail.setOpenExternalLinks(False)
-        right.addWidget(self.detail)
-        body.addLayout(right, 2)
+        question_layout.addWidget(self.detail)
+        tabs.addTab(question_tab, "Soal")
+        self.team_panel = TeamPanel(self.controller)
+        tabs.addTab(self.team_panel, "Tim & Skor")
+        body.addWidget(tabs, 2)
         outer.addLayout(body, 1)
 
         file_row = QHBoxLayout()
@@ -182,6 +189,7 @@ class OperatorWindow(QMainWindow):
             self._sync_detail(state)
             self._sync_status(state)
             self._sync_buttons(state)
+            self.team_panel.sync(state)
         finally:
             self._updating = False
 

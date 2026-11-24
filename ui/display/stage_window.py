@@ -4,6 +4,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from ui.display.scoreboard_view import ScoreboardView
+
 
 class StageWindow(QWidget):
     def __init__(self, initial_state):
@@ -32,8 +34,12 @@ class StageWindow(QWidget):
         self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.status.setStyleSheet("font-size:18px;color:#9aa7bd;")
 
-        for widget in (self.title, self.question, self.answer, self.status):
-            self.root_layout.addWidget(widget)
+        self.scoreboard = ScoreboardView()
+        self.root_layout.addWidget(self.title)
+        self.root_layout.addWidget(self.question, 3)
+        self.root_layout.addWidget(self.answer, 1)
+        self.root_layout.addWidget(self.status)
+        self.root_layout.addWidget(self.scoreboard, 1)
 
         self.resize(1280, 720)
         self.render_state(initial_state)
@@ -71,3 +77,5 @@ class StageWindow(QWidget):
             self.status.setText(f"{done}/{len(state.questions)} selesai")
         else:
             self.status.setText("")
+
+        self.scoreboard.render_state(state)

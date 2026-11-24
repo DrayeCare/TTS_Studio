@@ -7,6 +7,20 @@ tested without a GUI.
 from PySide6.QtCore import QObject, Signal
 
 from core.game_state import GameState
+from core.score_engine import (
+    build_undo,
+    mark_undone,
+    new_transaction,
+    validate_amount,
+    validate_reason,
+)
+from models.team import (
+    MAX_TEAMS,
+    TeamState,
+    is_duplicate_name,
+    normalize_team_name,
+    validate_initial_score,
+)
 
 
 class GameController(QObject):
@@ -141,3 +155,129 @@ class GameController(QObject):
         """Return the whole session to its initial state."""
         self.state.reset()
         self._emit()
+
+    # --- team management ---------------------------------------------
+
+    def _fail(self, message):
+        """Reject a command but still report why through state feedback."""
+        self.state.last_action = message
+        self._emit()
+        return False
+
+    def _find_team(self, team_id):
+        if isinstance(team_id, bool) or not isinstance(team_id, int):
+            return None
+        return next((team for team in self.state.teams if team.id == team_id), None)
+
+    def add_team(self, name, score=0):
+        """Create a team. Returns its id, or False when rejected."""
+        try:
+            clean_name = normalize_team_name(name)
+            score = validate_initial_score(score)
+        except ValueError as exc:
+            return self._fail(str(exc))
+        if len(self.state.teams) >= MAX_TEAMS:
+            return self._fail(f"Jumlah tim maksimal {MAX_TEAMS}.")
+        if is_duplicate_name(self.state.teams, clean_name):
+            return self._fail(f"Tim '{clean_name}' sudah ada.")
+        team = TeamState(id=self.state.next_team_id, name=clean_name, score=score)
+        self.state.next_team_id += 1
+        self.state.teams.append(team)
+        if self.state.selected_team_id is None:
+            self.state.selected_team_id = team.id
+        self.state.last_action = f"Tim '{team.name}' ditambahkan."
+        self._emit()
+        return team.id
+
+    def rename_team(self, team_id, name):
+        team = self._find_team(team_id)
+        if team is None:
+            return self._fail("Tim tidak ditemukan.")
+        try:
+            clean_name = normalize_team_name(name)
+        except ValueError as exc:
+            return self._fail(str(exc))
+        if is_duplicate_name(self.state.teams, clean_name, exclude_id=team_id):
+            return self._fail(f"Tim '{clean_name}' sudah ada.")
+        old_name = team.name
+        team.name = clean_name
+        self.state.last_action = f"Tim '{old_name}' menjadi '{clean_name}'."
+        self._emit()
+        return True
+
+    def remove_team(self, team_id):
+        team = self._find_team(team_id)
+        if team is None:
+            return self._fail("Tim tidak ditemukan.")
+        self.state.teams.remove(team)
+        if self.state.selected_team_id == team_id:
+            self.state.selected_team_id = (
+                self.state.teams[0].id if self.state.teams else None
+            )
+        self.state.last_action = f"Tim '{team.name}' dihapus."
+        self._emit()
+        return True
+
+    def select_team(self, team_id):
+        team = self._find_team(team_id)
+        if team is None:
+            return self._fail("Tim tidak ditemukan.")
+        self.state.selected_team_id = team.id
+        self.state.last_action = f"Tim '{team.name}' dipilih."
+        self._emit()
+        return True
+
+    @property
+    def selected_team(self):
+        return self._find_team(self.state.selected_team_id)
+
+    # --- scoring ------------------------------------------------------
+
+    def adjust_score(self, team_id, amount, reason=""):
+        """Apply one validated score transaction to a team."""
+        team = self._find_team(team_id)
+        if team is None:
+            return self._fail("Tim tidak ditemukan.")
+        try:
+            amount = validate_amount(amount)
+            reason = validate_reason(reason)
+        except ValueError as exc:
+            return self._fail(str(exc))
+        resulting_score = team.score + amount
+        transaction = new_transaction(
+            sequence=self.state.next_transaction_id,
+            team_id=team.id,
+            team_name=team.name,
+            amount=amount,
+            reason=reason,
+            resulting_score=resulting_score,
+        )
+        team.score = resulting_score
+        self.state.next_transaction_id += 1
+        self.state.score_history.append(transaction)
+        self.state.last_action = f"{team.name}: {amount:+d} poin ({reason})."
+        self._emit()
+        return True
+
+    def undo_last_score(self):
+        """Reverse the newest active score transaction with a ledger entry."""
+        state = self.state
+        target_index = -1
+        target = None
+        for index, transaction in enumerate(state.score_history):
+            if transaction.kind == "score" and not transaction.undone:
+                target_index = index
+                target = transaction
+        if target is None:
+            return self._fail("Tidak ada transaksi skor yang bisa di-undo.")
+        team = self._find_team(target.team_id)
+        if team is None:
+            return self._fail("Tim dari transaksi tersebut sudah dihapus.")
+        undo_entry = build_undo(target, team.score, state.next_transaction_id)
+        state.score_history[target_index] = mark_undone(target)
+        team.score = undo_entry.resulting_score
+        state.next_transaction_id += 1
+        state.score_history.append(undo_entry)
+        state.last_action = f"Undo transaksi #{target.sequence} ({target.team_name})."
+        self._emit()
+        return True

@@ -52,11 +52,15 @@
 - Entry point PySide6 dengan jendela operator dan stage terpisah serta deteksi layar sekunder.
 - `GameState` terpusat dan `GameController` berbasis sinyal Qt.
 - `Question` dan `QuestionService` untuk memuat serta memvalidasi berkas JSON soal.
-- Operator: muat set JSON/contoh, pilih soal, navigasi, tampilkan soal, buka/sembunyikan jawaban, tandai selesai, mulai/jeda/lanjut, reset, dan pintasan keyboard.
-- Stage: judul, nomor dan kategori soal, teks soal, jawaban, serta indikator status.
-- 33 tes otomatis untuk controller, pemuatan soal, dan integrasi operator/stage (offscreen).
+- Operator tab **Soal**: muat set JSON/contoh, pilih soal, navigasi, tampilkan soal, buka/sembunyikan jawaban, tandai selesai, mulai/jeda/lanjut, reset, dan pintasan keyboard.
+- Operator tab **Tim & Skor**: tambah/ubah nama/hapus tim, skor awal, tambah/kurangi poin dengan jumlah dan alasan, riwayat transaksi, undo, dan umpan balik aksi.
+- `models/team.py` berisi aturan tim (maksimal 12 tim, nama maksimal 40 karakter, unik tanpa memperhatikan huruf besar/kecil).
+- `core/score_engine.py` berisi ledger skor append-only: setiap transaksi mencatat tim, jumlah, alasan, timestamp UTC, dan skor akhir. Skor negatif diizinkan untuk penalti.
+- Undo tidak menghapus riwayat: transaksi asli ditandai batal dan ditambah entri kompensasi. Redo sengaja tidak diimplementasikan.
+- Stage: judul, nomor dan kategori soal, teks soal, jawaban, indikator status, dan scoreboard tim yang diperbarui lewat sinyal yang sama.
+- 89 tes otomatis untuk controller, pemuatan soal, aturan tim, ledger skor, undo, dan integrasi operator/stage (offscreen).
 
-**Belum diimplementasikan:** manajemen tim dan skor, timer, animasi, efek suara, editor soal, penyimpanan sesi, ekspor JSON, dan pintasan yang dapat dikonfigurasi.
+**Belum diimplementasikan:** timer, animasi, efek suara, editor soal, penyimpanan sesi, ekspor JSON, dan pintasan yang dapat dikonfigurasi.
 
 ---
 
@@ -495,17 +499,26 @@ The game state is managed centrally.
 ```python
 GameState(
     current_question_id=None,
-    current_round=1,
-    answer_visible=False,
     question_visible=False,
+    answer_visible=False,
     game_started=False,
     game_paused=False,
-    teams=[],
-    completed_questions=[]
+    teams=[],                 # TeamState(id, name, score)
+    completed_questions=[],
+    question_text="",
+    answer_text="",
+    title="",
+    questions=[],
+    current_index=None,
+    score_history=[],         # ScoreTransaction: ledger append-only
+    next_team_id=1,
+    next_transaction_id=1,
+    selected_team_id=None,
+    last_action="",
 )
 ```
 
-*The actual implementation will use appropriate Python data structures or typed models.*
+Kebijakan skor: jumlah poin harus bilangan bulat bukan nol; skor akhir boleh negatif. Setiap perubahan adalah satu transaksi. Undo menandai transaksi lama sebagai batal dan menambah entri kompensasi, sehingga riwayat tetap lengkap.
 
 ### State Management Rules
 - UI components must not independently maintain authoritative game state.

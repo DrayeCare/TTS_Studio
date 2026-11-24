@@ -1,7 +1,9 @@
-from PySide6.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QWidget
+"""Wires the controller, operator console, and stage display together."""
+
 from core.game_controller import GameController
 from ui.display.stage_window import StageWindow
 from ui.operator.main_window import OperatorWindow
+
 
 class TTSStudioApplication:
     def __init__(self):

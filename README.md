@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![PySide6](https://img.shields.io/badge/GUI-PySide6%20(Qt)-41CD52?style=for-the-badge&logo=qt&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Planning%20%2F%20Initial%20Dev-orange?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Core%20Workflow%20Ready-blue?style=for-the-badge)
 ![Offline](https://img.shields.io/badge/Mode-Offline--First-success?style=for-the-badge)
 
 <p align="center">
@@ -41,6 +41,22 @@
 - [🗺️ Development Roadmap](#️-development-roadmap)
 - [🧭 Development Principles](#-development-principles)
 - [📜 License & Status](#-license--status)
+
+---
+
+## ✅ Status Implementasi Saat Ini
+
+> Bagian ini mencatat apa yang **benar-benar ada di kode**, bukan rencana di roadmap.
+
+**Sudah berjalan:**
+- Entry point PySide6 dengan jendela operator dan stage terpisah serta deteksi layar sekunder.
+- `GameState` terpusat dan `GameController` berbasis sinyal Qt.
+- `Question` dan `QuestionService` untuk memuat serta memvalidasi berkas JSON soal.
+- Operator: muat set JSON/contoh, pilih soal, navigasi, tampilkan soal, buka/sembunyikan jawaban, tandai selesai, mulai/jeda/lanjut, reset, dan pintasan keyboard.
+- Stage: judul, nomor dan kategori soal, teks soal, jawaban, serta indikator status.
+- 33 tes otomatis untuk controller, pemuatan soal, dan integrasi operator/stage (offscreen).
+
+**Belum diimplementasikan:** manajemen tim dan skor, timer, animasi, efek suara, editor soal, penyimpanan sesi, ekspor JSON, dan pintasan yang dapat dikonfigurasi.
 
 ---
 
@@ -249,6 +265,8 @@ flowchart TD
 ---
 
 ## 📂 Project Structure
+
+> Struktur di bawah adalah target arsitektur, bukan daftar file aktual. Lihat "Status Implementasi Saat Ini" untuk file yang benar-benar ada.
 
 ```text
 tts-studio/
